@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>floating-hearts</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    width: 100vw;
+    height: 100vh;
+    overflow: hidden;
+    background: linear-gradient(135deg, #ff9a9e 0%, #fecfef 25%, #fbc2eb 50%, #f6d5f7 75%, #ffd1dc 100%);
+    position: relative;
+  }
+
+  .heart {
+    position: absolute;
+    font-size: 24px;
+    animation: floatDown linear infinite;
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  @keyframes floatDown {
+    0%   { transform: translateY(0) scale(0.5) rotate(0deg); opacity: 0; }
+    10%  { opacity: 0.9; }
+    95%  { opacity: 0.9; }
+    100% { transform: translateY(105vh) scale(1.2) rotate(360deg); opacity: 0; }
+  }
+</style>
+</head>
+<body>
+
+<script>
+const EMOJIS = ['❤️', '💕', '💖', '💗', '💝', '💘', '💓', '🩷', '♥️', '💞'];
+const COUNT = 80;
+
+function createHeart() {
+  const heart = document.createElement('span');
+  heart.className = 'heart';
+  heart.textContent = EMOJIS[Math.floor(Math.random() * EMOJIS.length)];
+
+  const size = Math.random() * 30 + 14;
+  heart.style.fontSize = size + 'px';
+  heart.style.left = Math.random() * 100 + '%';
+  heart.style.top = -(size + Math.random() * 40) + 'px';
+
+  const duration = Math.random() * 5 + 3;
+  heart.style.animationDuration = duration + 's';
+  heart.style.animationDelay = Math.random() * 8 + 's';
+
+  document.body.appendChild(heart);
+
+  setTimeout(() => {
+    heart.remove();
+    createHeart();
+  }, (duration + 4) * 1000);
+}
+
+for (let i = 0; i < COUNT; i++) {
+  setTimeout(() => createHeart(), Math.random() * 1500);
+}
+</script>
+
+</body>
+</html>
