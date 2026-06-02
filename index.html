@@ -2,22 +2,28 @@
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>floating-hearts</title>
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
 
-  body {
-    width: 100vw;
-    height: 100vh;
+  html, body {
+    width: 100%;
+    height: 100%;
     overflow: hidden;
     background: linear-gradient(135deg, #ff9a9e 0%, #fecfef 25%, #fbc2eb 50%, #f6d5f7 75%, #ffd1dc 100%);
     position: relative;
+    /* 防止 iOS Safari 弹性滚动 */
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    touch-action: none;
   }
 
   .heart {
     position: absolute;
-    font-size: 24px;
     animation: floatDown linear infinite;
     opacity: 0;
     pointer-events: none;
@@ -38,14 +44,14 @@
     0%   { transform: translateY(0) scale(0.5) rotate(0deg); opacity: 0; }
     10%  { opacity: 0.9; }
     95%  { opacity: 0.9; }
-    100% { transform: translateY(105vh) scale(1.2) rotate(360deg); opacity: 0; }
+    100% { transform: translateY(105vh) scale(1.15) rotate(360deg); opacity: 0; }
   }
 
   @keyframes floatDownSlow {
     0%   { transform: translateY(0) scale(0.6); opacity: 0; }
     8%   { opacity: 0.95; }
     92%  { opacity: 0.95; }
-    100% { transform: translateY(105vh) scale(1.05); opacity: 0; }
+    100% { transform: translateY(105vh) scale(1.02); opacity: 0; }
   }
 </style>
 </head>
@@ -59,15 +65,61 @@ const PINK_COLORS = [
   '#ff7eb3', '#ff5c8a', '#f779a6', '#ff95b8',
   '#ff6b9d', '#ff88a8', '#ff9eb5', '#ffb8c9',
 ];
-const HEART_COUNT = 60;
-const TEXT_COUNT = 25;
 
 function random(min, max) {
   return Math.random() * (max - min) + min;
 }
 
+function randomInt(min, max) {
+  return Math.floor(random(min, max + 1));
+}
+
 function randomItem(arr) {
   return arr[Math.floor(Math.random() * arr.length)];
+}
+
+// 根据屏幕宽度动态计算数量
+function getCounts() {
+  const vw = window.innerWidth;
+  if (vw < 360)  return { hearts: 30, texts: 14 };    // 小屏手机
+  if (vw < 480)  return { hearts: 45, texts: 20 };    // 中大手机
+  if (vw < 768)  return { hearts: 55, texts: 25 };    // 平板竖屏
+  return { hearts: 60, texts: 28 };                     // 大屏/桌面
+}
+
+// 根据屏幕宽度动态计算字号范围
+function getSizeRanges() {
+  const vw = window.innerWidth;
+  if (vw < 360) {
+    return {
+      heartMin: 12, heartMax: 24,
+      textBigMin: 20, textBigMax: 30,
+      textSmallMin: 11, textSmallMax: 18,
+      textLeftMax: 88,  // % 安全右边界
+    };
+  }
+  if (vw < 480) {
+    return {
+      heartMin: 14, heartMax: 30,
+      textBigMin: 26, textBigMax: 40,
+      textSmallMin: 14, textSmallMax: 24,
+      textLeftMax: 90,
+    };
+  }
+  if (vw < 768) {
+    return {
+      heartMin: 14, heartMax: 36,
+      textBigMin: 32, textBigMax: 52,
+      textSmallMin: 16, textSmallMax: 30,
+      textLeftMax: 93,
+    };
+  }
+  return {
+    heartMin: 14, heartMax: 42,
+    textBigMin: 36, textBigMax: 64,
+    textSmallMin: 18, textSmallMax: 35,
+    textLeftMax: 95,
+  };
 }
 
 // ---- 爱心 ----
@@ -76,14 +128,15 @@ function createHeart() {
   el.className = 'heart';
   el.textContent = randomItem(EMOJIS);
 
-  const size = random(14, 42);
+  const ranges = getSizeRanges();
+  const size = random(ranges.heartMin, ranges.heartMax);
   el.style.fontSize = size + 'px';
-  el.style.left = random(0, 100) + '%';
+  el.style.left = random(2, 95) + '%';
   el.style.top = -(size + random(10, 60)) + 'px';
 
   const duration = random(3, 7);
   el.style.animationDuration = duration + 's';
-  el.style.animationDelay = random(0, 6) + 's';
+  el.style.animationDelay = random(0, duration * 0.8) + 's';
 
   document.body.appendChild(el);
 
@@ -100,21 +153,30 @@ function createTextFloater() {
   el.className = 'text-float';
   el.textContent = randomItem(TEXTS);
   el.style.color = randomItem(PINK_COLORS);
+  el.style.visibility = 'hidden';
 
-  // 字体大小：有的很大(36~64px)，有的中等(18~35px)
-  const size = Math.random() < 0.45
-    ? random(36, 64)   // 45% 概率大字
-    : random(18, 35);  // 55% 概率中小字
+  const ranges = getSizeRanges();
+  const isBig = Math.random() < 0.45;
+  const size = isBig
+    ? random(ranges.textBigMin, ranges.textBigMax)
+    : random(ranges.textSmallMin, ranges.textSmallMax);
+
   el.style.fontSize = size + 'px';
-  el.style.left = random(0, 95) + '%';
   el.style.top = -(size + random(20, 100)) + 'px';
 
   // 慢速下落：8~18秒
   const duration = random(8, 18);
   el.style.animationDuration = duration + 's';
-  el.style.animationDelay = random(0, 10) + 's';
+  el.style.animationDelay = random(0, duration * 0.6) + 's';
 
+  // 先加入 DOM 才能测量宽度
   document.body.appendChild(el);
+  const elWidth = el.offsetWidth;
+  const vw = window.innerWidth;
+  // 用 px 精确定位，确保不溢出
+  const maxLeftPx = Math.max(0, vw - elWidth - 2);
+  el.style.left = random(0, maxLeftPx) + 'px';
+  el.style.visibility = '';
 
   const lifetime = (duration + random(3, 6)) * 1000;
   setTimeout(() => {
@@ -124,13 +186,22 @@ function createTextFloater() {
 }
 
 // ---- 启动 ----
-for (let i = 0; i < HEART_COUNT; i++) {
-  setTimeout(() => createHeart(), random(0, 2000));
+function start() {
+  const counts = getCounts();
+
+  for (let i = 0; i < counts.hearts; i++) {
+    setTimeout(() => createHeart(), random(0, 2000));
+  }
+
+  for (let i = 0; i < counts.texts; i++) {
+    setTimeout(() => createTextFloater(), random(0, 3000));
+  }
 }
 
-for (let i = 0; i < TEXT_COUNT; i++) {
-  setTimeout(() => createTextFloater(), random(0, 3000));
-}
+start();
+
+// 屏幕旋转 / 尺寸变化时不再重新创建（已存在的继续循环补充即可）
+// 但首次加载后动态调整已在 createXxx 内部按实时 vw 计算
 </script>
 
 </body>
